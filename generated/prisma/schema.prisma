@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id           Int            @id @default(autoincrement())
+  title        String
+  content      String
+  published    Boolean        @default(false)
+  authorId     Int
+  author       User           @relation(fields: [authorId], references: [id]) //one to many relation
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  postCategory PostCategory[] // many to many relation
+
+  @@map("posts") // map to the database table name
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  userName  String   @unique
+  email     String
+  role      UserRole @default(user)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  profile   Profile? // one to one relation
+  posts     Post[] // one to many relation
+
+  @@map("users") // map to the database table name
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  userId Int     @unique
+  user   User    @relation(fields: [userId], references: [id]) //one to one relation
+
+  @@map("profiles") // map to the database table name
+}
+
+model Category {
+  id           Int            @id @default(autoincrement())
+  name         String
+  postCategory PostCategory[] // many to many relation
+
+  @@map("categories") // map to the database table name
+}
+
+//intermediate table for many to many relation between Post and Category
+model PostCategory {
+  postId     Int
+  post       Post     @relation(fields: [postId], references: [id]) // many to many relation
+  category   Category @relation(fields: [categoryId], references: [id]) // many to many relation
+  categoryId Int
+
+  @@id([postId, categoryId]) // composite primary key
+  @@map("post_category") // map to the database table name
+}
